@@ -66,21 +66,30 @@ var router = (function (XHR) {
             
         url = location.pathname || "/";
         currentRoute = routes[url] || "";
-        container = document.querySelector(currentRoute.container) || "";
         controller = currentRoute.controller;
             
         // if we have a route object and it's container element
-        if (currentRoute && container) {
+        if (currentRoute) {
             // get the data from the templateUrl
             XHR.get({
                 requestType: "GET",
                 url: currentRoute.templateUrl,
-                success: currentRoute.controller
+                success: currentRoute.controller || setContent
             });
             
             replaceHistory(url.replace("/", ""));
         }
     };
+    
+    function setContent(data) {
+        var container = currentRoute.container != "" ? document.querySelector(currentRoute.container) : "";
+        
+        if (container) {
+            container.innerHTML = data;
+        } else {
+            console.log("No container to place content into")
+        }
+    }
     
     function getRoutes () {
         return routes;
