@@ -3,7 +3,9 @@ var router = (function (XHR) {
     
     // the client side routes
     var routes = {};
+    var defaultRoute = {};
     var currentRoute = {};
+    var defaultContainer = "ajax-container";
     
     window.addEventListener("popstate", route);
     window.addEventListener("DOMContentLoaded", route);
@@ -28,14 +30,15 @@ var router = (function (XHR) {
     
     function pushHistory(target) {
         var targetUrl = target.getAttribute("href");
+        var prettyUrl = targetUrl === "/" ? "/" : targetUrl.replace("/", "");
         
-        history.pushState(null, targetUrl.replace("/", ""), targetUrl.replace("/", ""));
+        history.pushState(prettyUrl, prettyUrl, prettyUrl);
         document.title = targetUrl.replace("/", "");
         route();
     };
     
     function replaceHistory(title) {
-        history.replaceState(null, null, title);
+        history.replaceState(title, title, title);
         document.title = title;
     }
     
@@ -44,14 +47,21 @@ var router = (function (XHR) {
         obj.templateUrl          // the url to get the html file from the server or the url to hit the server's controller and action method
         obj.controller           // function used for setting properties or passing data to the template
         obj.container            // the container element's tag, ID, or class
+        obj.default              // a boolean to flag to set this as the default route
     */
     // method to add a new client side route
     function mapRoute (obj) {
-        routes[obj.route] = { 
-            templateUrl: obj.templateUrl, 
+        var thisObject = obj.route.toLowerCase();
+        
+        routes[thisObject] = { 
+            templateUrl: obj.templateUrl || obj.route.toLowerCase(), 
             controller: obj.controller, 
-            container: obj.container
+            container: obj.container || defaultContainer
         };
+        
+        if (obj.default) {
+            defaultRoute = routes[thisObject];
+        }
     };
     
     /*
@@ -64,12 +74,18 @@ var router = (function (XHR) {
             container,
             controller;
             
-        url = location.pathname || "/";
+        url = location.pathname.toLowerCase() || "/";
         currentRoute = routes[url] || "";
-        controller = currentRoute.controller;
+        controller = currentRoute.controller || setContent;
             
+        // if we don't have a valid route object return home
+        if (currentRoute === "" || !currentRoute) {
+            currentRoute = defaultRoute;
+        }
+        
         // if we have a route object and it's container element
-        if (currentRoute) {
+        if (currentRoute.templateUrl !== null && currentRoute.templateUrl !== "") {   
+                     
             // get the data from the templateUrl
             XHR.get({
                 requestType: "GET",
